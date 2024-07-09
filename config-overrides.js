@@ -17,7 +17,6 @@
 //   return config;
 // };
 
-// Apply the override early
 const crypto = require('crypto');
 const crypto_orig_createHash = crypto.createHash;
 crypto.createHash = (algorithm) =>
@@ -33,7 +32,28 @@ module.exports = function override(config, env) {
     })
   );
 
+  console.log('Webpack configuration:', JSON.stringify(config, null, 2));
+
+  // Find and modify the url-loader
+  config.module.rules.forEach((rule) => {
+    if (rule.oneOf) {
+      rule.oneOf.forEach((oneOfRule) => {
+        if (
+          oneOfRule.loader &&
+          oneOfRule.loader.includes('url-loader')
+        ) {
+          oneOfRule.options = {
+            ...oneOfRule.options,
+            name: 'static/media/[name].[hash:8].[ext]',
+            limit: 10000,
+          };
+        }
+      });
+    }
+  });
+
   return config;
 };
+
 
 
