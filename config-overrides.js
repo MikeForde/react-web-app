@@ -1,23 +1,20 @@
+const path = require('path');
+const fs = require('fs');
 const webpack = require('webpack');
-const crypto = require('crypto');
+
+// Load the patched version of createEnvironmentHash
+const createEnvironmentHashPath = path.resolve(__dirname, 'patch-createEnvironmentHash.js');
+const createEnvironmentHash = require(createEnvironmentHashPath);
 
 module.exports = function override(config, env) {
-  // Override the Webpack configuration directly
-  config.plugins = (config.plugins || []).map((plugin) => {
-    if (plugin.constructor.name === 'EnvironmentPlugin') {
-      plugin.defaultValues = {
-        ...plugin.defaultValues,
-        // Override the environment hash function to use SHA256
-        BUILD_ENVIRONMENT_HASH: crypto
-          .createHash('sha256')
-          .update(JSON.stringify(process.env))
-          .digest('hex'),
-      };
-    }
-    return plugin;
-  });
+  // Replace the createEnvironmentHash function in the webpack configuration
+  const createEnvironmentHashModulePath = 'react-scripts/config/webpack/persistentCache/createEnvironmentHash.js';
+  const fullPathToCreateEnvironmentHash = require.resolve(createEnvironmentHashModulePath);
+  
+  // Override the file with the patched version
+  fs.writeFileSync(fullPathToCreateEnvironmentHash, `module.exports = ${createEnvironmentHash.toString()}`);
 
-  // Provide the crypto module
+  // Ensure the crypto module is available
   config.plugins.push(
     new webpack.ProvidePlugin({
       crypto: 'crypto',
