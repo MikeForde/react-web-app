@@ -1,25 +1,23 @@
-const crypto = require('crypto');
 const webpack = require('webpack');
+const crypto = require('crypto');
 
 module.exports = function override(config, env) {
-  // Ensure crypto module's createHash does not use MD4
-  const crypto_orig_createHash = crypto.createHash;
-  crypto.createHash = (algorithm) =>
-    crypto_orig_createHash(algorithm === 'md4' ? 'sha256' : algorithm);
+  // Override the Webpack configuration directly
+  config.plugins = (config.plugins || []).map((plugin) => {
+    if (plugin.constructor.name === 'EnvironmentPlugin') {
+      plugin.defaultValues = {
+        ...plugin.defaultValues,
+        // Override the environment hash function to use SHA256
+        BUILD_ENVIRONMENT_HASH: crypto
+          .createHash('sha256')
+          .update(JSON.stringify(process.env))
+          .digest('hex'),
+      };
+    }
+    return plugin;
+  });
 
-  // Modify Webpack persistent cache configuration if it exists
-  if (config.cache && config.cache.type === 'filesystem') {
-    config.cache.buildDependencies = {
-      config: [__filename], // This is a workaround to invalidate the cache
-    };
-
-    config.cache.version = crypto
-      .createHash('sha256')
-      .update(config.cache.version || '')
-      .digest('hex');
-  }
-
-  // Add ProvidePlugin to ensure crypto is available
+  // Provide the crypto module
   config.plugins.push(
     new webpack.ProvidePlugin({
       crypto: 'crypto',
