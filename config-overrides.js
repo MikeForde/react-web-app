@@ -33,6 +33,8 @@ module.exports = function override(config, env) {
     })
   );
 
+  console.log('Webpack configuration:', JSON.stringify(config, null, 2));
+
   return config;
 };
 
