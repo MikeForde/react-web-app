@@ -12,7 +12,7 @@ module.exports = function override(config, env) {
   const crypto = require('crypto');
   const crypto_orig_createHash = crypto.createHash;
   crypto.createHash = (algorithm) =>
-    crypto_orig_createHash(algorithm === 'md4' ? 'sha256' : algorithm);
+    crypto_orig_createHash(algorithm === 'md5' ? 'sha256' : algorithm);
 
   return config;
 };
